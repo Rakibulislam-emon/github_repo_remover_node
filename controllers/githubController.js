@@ -13,7 +13,9 @@ exports.githubCallback = async (req, res) => {
   try {
     const token = await getAccessToken(code);
     accessTokenCache.token = token;
-    res.redirect(`http://localhost:5173/success?token=${token}`);
+    // Use environment variable for client URL instead of hardcoded localhost
+    const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
+    res.redirect(`${clientURL}/success?token=${token}`);
   } catch (err) {
     console.error("GitHub Token Error:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to get access token" });
