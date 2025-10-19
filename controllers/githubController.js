@@ -1,5 +1,10 @@
+
 const axios = require("axios");
 const { getAccessToken } = require("../utils/githubAuth");
+require("dotenv").config({
+  path:
+    process.env.NODE_ENV === "production" ? ".env.production" : ".env.local",
+});
 
 let accessTokenCache = {};
 
@@ -23,8 +28,10 @@ exports.githubCallback = async (req, res) => {
 };
 
 exports.getRepos = async (req, res) => {
-  const accessToken = req.headers.authorization?.split(" ")[1] || accessTokenCache.token;
-  if (!accessToken) return res.status(401).json({ error: "Access token missing" });
+  const accessToken =
+    req.headers.authorization?.split(" ")[1] || accessTokenCache.token;
+  if (!accessToken)
+    return res.status(401).json({ error: "Access token missing" });
 
   try {
     const response = await axios.get("https://api.github.com/user/repos", {
@@ -42,11 +49,14 @@ exports.getRepos = async (req, res) => {
 };
 
 exports.deleteRepo = async (req, res) => {
-  const accessToken = req.headers.authorization?.split(" ")[1] || accessTokenCache.token;
+  const accessToken =
+    req.headers.authorization?.split(" ")[1] || accessTokenCache.token;
   const { fullRepoName } = req.body;
 
-  if (!accessToken) return res.status(401).json({ error: "Access token missing" });
-  if (!fullRepoName) return res.status(400).json({ error: "Repository name is required" });
+  if (!accessToken)
+    return res.status(401).json({ error: "Access token missing" });
+  if (!fullRepoName)
+    return res.status(400).json({ error: "Repository name is required" });
 
   try {
     await axios.delete(`https://api.github.com/repos/${fullRepoName}`, {
@@ -55,7 +65,9 @@ exports.deleteRepo = async (req, res) => {
         Accept: "application/vnd.github.v3+json",
       },
     });
-    res.json({ message: `✅ Repository ${fullRepoName} deleted successfully.` });
+    res.json({
+      message: `✅ Repository ${fullRepoName} deleted successfully.`,
+    });
   } catch (err) {
     console.error("Delete Repo Error:", err.response?.data || err.message);
     const status = err.response?.status || 500;
@@ -66,17 +78,21 @@ exports.deleteRepo = async (req, res) => {
 
 // New endpoint for batch deletion
 exports.batchDeleteRepos = async (req, res) => {
-  const accessToken = req.headers.authorization?.split(" ")[1] || accessTokenCache.token;
+  const accessToken =
+    req.headers.authorization?.split(" ")[1] || accessTokenCache.token;
   const { repoNames } = req.body;
 
-  if (!accessToken) return res.status(401).json({ error: "Access token missing" });
+  if (!accessToken)
+    return res.status(401).json({ error: "Access token missing" });
   if (!repoNames || !Array.isArray(repoNames) || repoNames.length === 0) {
-    return res.status(400).json({ error: "Repository names array is required" });
+    return res
+      .status(400)
+      .json({ error: "Repository names array is required" });
   }
 
   const results = {
     successful: [],
-    failed: []
+    failed: [],
   };
 
   // Process deletions sequentially to avoid rate limiting issues
@@ -90,16 +106,19 @@ exports.batchDeleteRepos = async (req, res) => {
       });
       results.successful.push(repoName);
     } catch (err) {
-      console.error(`Error deleting ${repoName}:`, err.response?.data || err.message);
+      console.error(
+        `Error deleting ${repoName}:`,
+        err.response?.data || err.message
+      );
       results.failed.push({
         repoName,
-        error: err.response?.data?.message || "Failed to delete"
+        error: err.response?.data?.message || "Failed to delete",
       });
     }
   }
 
   res.json({
     message: `Deleted ${results.successful.length} of ${repoNames.length} repositories`,
-    results
+    results,
   });
 };
